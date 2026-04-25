@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EmoCare - Doctor Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="dashboard-wrapper">
+
+    <div class="dash-header">
+      <span class="logo-small">+ EmoCare</span>
+      <span class="header-title">Doctor Dashboard</span>
+      <span class="doctor-name">Dr. Ahmed</span>
+    </div>
+
+    <div id="stressAlert" class="stress-banner" style="display:none;">
+      🚨 ALERT! A patient is under STRESS — Immediate attention required!
+    </div>
+
+    <div class="dash-stats" id="dashStats">
+      <div class="stat-card">
+        <p class="stat-num" id="totalCount">0</p>
+        <p class="stat-label">Total Messages</p>
+      </div>
+      <div class="stat-card stress">
+        <p class="stat-num" id="stressCount">0</p>
+        <p class="stat-label">Stress Alerts</p>
+      </div>
+      <div class="stat-card positive">
+        <p class="stat-num" id="positiveCount">0</p>
+        <p class="stat-label">Positive</p>
+      </div>
+      <div class="stat-card negative">
+        <p class="stat-num" id="negativeCount">0</p>
+        <p class="stat-label">Negative</p>
+      </div>
+    </div>
+
+    <div class="dash-content">
+      <h3 class="section-title">Patient Messages</h3>
+      <div id="messageList" class="message-list">
+        <p class="loading-text">Loading messages...</p>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module">
+    import { db } from './js/firebase-config.js';
+    import { ref, onValue } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js";
+
+    const emotionColors = {
+      STRESS: '#e53935',
+      NEGATIVE: '#FB8C00',
+      POSITIVE: '#43A047',
+      NEUTRAL: '#888'
+    };
+
+    onValue(ref(db, 'messages'), (snapshot) => {
+      const messageList = document.getElementById('messageList');
+      messageList.innerHTML = '';
+
+      let total = 0, stress = 0, positive = 0, negative = 0;
+      let hasStress = false;
+
+      if (snapshot.exists()) {
+        const messages = snapshot.val();
+
+        Object.values(messages).reverse().forEach(msg => {
+          total++;
+          if (msg.emotion === 'STRESS') { stress++; hasStress = true; }
+          if (msg.emotion === 'POSITIVE') positive++;
+          if (msg.emotion === 'NEGATIVE') negative++;
+
+          const time = new Date(msg.timestamp).toLocaleTimeString();
+          const color = emotionColors[msg.emotion] || '#888';
+
+          const div = document.createElement('div');
+          div.className = 'msg-row';
+          div.innerHTML = `
+            <div class="msg-info">
+              <span class="patient-id">Patient: ${msg.patientId || 'Unknown'}</span>
+              <span class="msg-time">${time}</span>
+            </div>
+            <div class="msg-text">${msg.message}</div>
+            <span class="emotion-tag" style="background:${color}">${msg.emotion}</span>
+          `;
+          messageList.appendChild(div);
+        });
+
+      } else {
+        messageList.innerHTML = '<p class="loading-text">No messages yet.</p>';
+      }
+
+      document.getElementById('totalCount').textContent = total;
+      document.getElementById('stressCount').textContent = stress;
+      document.getElementById('positiveCount').textContent = positive;
+      document.getElementById('negativeCount').textContent = negative;
+
+      document.getElementById('stressAlert').style.display = hasStress ? 'block' : 'none';
+    });
+  </script>
+</body>
+</html>

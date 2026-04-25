@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EmoCare - Patient Chat</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="chat-wrapper">
+    <div class="chat-header">
+      <span class="logo-small">+ EmoCare</span>
+      <span class="header-title">Chat with Doctor</span>
+      <span class="status">● Online</span>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="message bot">
+        <div class="bubble">Hello! How are you feeling today?</div>
+      </div>
+    </div>
+    <div class="chat-input-area">
+      <input type="text" id="messageInput" placeholder="Type your message..." />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { db } from './js/firebase-config.js';
+    import { ref, push } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js";
+
+    const emotions = {
+      stress: ['stressed','anxious','panic','overwhelmed','worried','cant sleep','nervous','fear'],
+      negative: ['sad','depressed','bad','terrible','awful','pain','hurt','sick','tired','lonely'],
+      positive: ['good','great','better','happy','fine','well','excellent','wonderful','recovered']
+    };
+
+    function analyzeEmotion(text) {
+      const lower = text.toLowerCase();
+      if (emotions.stress.some(w => lower.includes(w))) return { emotion: 'STRESS', color: '#e53935' };
+      if (emotions.negative.some(w => lower.includes(w))) return { emotion: 'NEGATIVE', color: '#FB8C00' };
+      if (emotions.positive.some(w => lower.includes(w))) return { emotion: 'POSITIVE', color: '#43A047' };
+      return { emotion: 'NEUTRAL', color: '#888' };
+    }
+
+    window.sendMessage = function () {
+      const input = document.getElementById('messageInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const result = analyzeEmotion(text);
+      const chatMessages = document.getElementById('chatMessages');
+
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'message user';
+      msgDiv.innerHTML = `
+        <div class="bubble">${text}
+          <span class="emotion-badge" style="background:${result.color}">${result.emotion}</span>
+        </div>`;
+      chatMessages.appendChild(msgDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      push(ref(db, 'messages'), {
+        message: text,
+        emotion: result.emotion,
+        timestamp: Date.now(),
+        patientId: 'patient001'
+      });
+
+      if (result.emotion === 'STRESS') {
+        setTimeout(() => {
+          const alertDiv = document.createElement('div');
+          alertDiv.className = 'message bot';
+          alertDiv.innerHTML = `<div class="bubble alert-msg">🚨 I can see you're stressed. A doctor will assist you shortly!</div>`;
+          chatMessages.appendChild(alertDiv);
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        }, 1000);
+      }
+
+      input.value = '';
+    }
+
+    document.getElementById('messageInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') window.sendMessage();
+    });
+  </script>
+</body>
+</html>

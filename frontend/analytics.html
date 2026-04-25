@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EmoCare - Analytics</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+</head>
+<body>
+  <div class="analytics-wrapper">
+
+    <div class="dash-header">
+      <span class="logo-small">+ EmoCare</span>
+      <span class="header-title">Analytics Dashboard</span>
+      <a href="doctor-dashboard.html" class="back-btn">Back to Dashboard</a>
+    </div>
+
+    <div class="dash-stats" id="dashStats">
+      <div class="stat-card">
+        <p class="stat-num" id="totalCount">0</p>
+        <p class="stat-label">Total Messages</p>
+      </div>
+      <div class="stat-card stress">
+        <p class="stat-num" id="stressCount">0</p>
+        <p class="stat-label">Stress Cases</p>
+      </div>
+      <div class="stat-card positive">
+        <p class="stat-num" id="positiveCount">0</p>
+        <p class="stat-label">Positive</p>
+      </div>
+      <div class="stat-card negative">
+        <p class="stat-num" id="negativeCount">0</p>
+        <p class="stat-label">Negative</p>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3 class="section-title">Emotion Distribution</h3>
+        <canvas id="barChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3 class="section-title">Emotion Breakdown</h3>
+        <canvas id="pieChart"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <script type="module">
+    import { db } from './js/firebase-config.js';
+    import { ref, onValue } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js";
+
+    let barChart, pieChart;
+
+    onValue(ref(db, 'messages'), (snapshot) => {
+      let total = 0, stress = 0, positive = 0, negative = 0, neutral = 0;
+
+      if (snapshot.exists()) {
+        Object.values(snapshot.val()).forEach(msg => {
+          total++;
+          if (msg.emotion === 'STRESS') stress++;
+          else if (msg.emotion === 'POSITIVE') positive++;
+          else if (msg.emotion === 'NEGATIVE') negative++;
+          else neutral++;
+        });
+      }
+
+      document.getElementById('totalCount').textContent = total;
+      document.getElementById('stressCount').textContent = stress;
+      document.getElementById('positiveCount').textContent = positive;
+      document.getElementById('negativeCount').textContent = negative;
+
+      const labels = ['Positive', 'Negative', 'Stress', 'Neutral'];
+      const data = [positive, negative, stress, neutral];
+      const colors = ['#43A047', '#FB8C00', '#e53935', '#888'];
+
+      if (barChart) barChart.destroy();
+      if (pieChart) pieChart.destroy();
+
+      barChart = new Chart(document.getElementById('barChart'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Message Count',
+            data,
+            backgroundColor: colors,
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+      });
+
+      pieChart = new Chart(document.getElementById('pieChart'), {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{
+            data,
+            backgroundColor: colors,
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'bottom' }
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>
