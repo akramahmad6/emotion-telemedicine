@@ -4,102 +4,183 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EmoCare - Doctor Dashboard</title>
-  <link rel="stylesheet" href="css/style.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+    body { background: #F0F4FF; }
+
+    .navbar { background: white; padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.08); position: sticky; top: 0; z-index: 100; }
+    .nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .nav-icon { background: #1E88E5; color: white; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .nav-title { font-size: 20px; font-weight: 700; color: #1E88E5; }
+    .nav-menu { display: flex; gap: 8px; }
+    .nav-menu a { color: #555; text-decoration: none; font-size: 13px; padding: 7px 14px; border-radius: 20px; transition: all 0.2s; }
+    .nav-menu a:hover, .nav-menu a.active { background: #E3F2FD; color: #1E88E5; font-weight: 600; }
+
+    .wrapper { max-width: 960px; margin: 30px auto; padding: 0 20px; }
+
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+    .page-header h1 { font-size: 24px; font-weight: 700; color: #1a1a2e; }
+    .page-header .doctor-badge { background: #E3F2FD; color: #1E88E5; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+
+    .stress-alert { background: linear-gradient(135deg, #e53935, #c62828); color: white; padding: 16px 25px; border-radius: 14px; margin-bottom: 20px; display: none; font-weight: 600; font-size: 15px; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.8; } }
+
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
+    .stat-card { background: white; border-radius: 16px; padding: 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.06); border-top: 4px solid #E3F2FD; }
+    .stat-card.stress { border-top-color: #e53935; }
+    .stat-card.positive { border-top-color: #43A047; }
+    .stat-card.negative { border-top-color: #FB8C00; }
+    .stat-num { font-size: 36px; font-weight: 800; color: #1E88E5; }
+    .stat-card.stress .stat-num { color: #e53935; }
+    .stat-card.positive .stat-num { color: #43A047; }
+    .stat-card.negative .stat-num { color: #FB8C00; }
+    .stat-label { font-size: 12px; color: #888; margin-top: 5px; }
+
+    .card { background: white; border-radius: 16px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); margin-bottom: 20px; }
+    .card h3 { font-size: 16px; font-weight: 700; color: #1a1a2e; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+
+    .reply-area { display: flex; gap: 10px; }
+    .reply-area input { flex: 1; padding: 12px 18px; border: 1.5px solid #E3F2FD; border-radius: 25px; font-size: 14px; outline: none; transition: border 0.2s; background: #F5F9FF; }
+    .reply-area input:focus { border-color: #1E88E5; background: white; }
+    .reply-area button { background: linear-gradient(135deg, #1E88E5, #1565C0); color: white; border: none; padding: 12px 22px; border-radius: 25px; cursor: pointer; font-size: 14px; font-weight: 600; white-space: nowrap; }
+    .reply-sent { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .reply-item { background: #E3F2FD; padding: 10px 15px; border-radius: 10px; font-size: 13px; color: #1565C0; }
+
+    .message-list { display: flex; flex-direction: column; gap: 12px; max-height: 450px; overflow-y: auto; }
+    .message-list::-webkit-scrollbar { width: 4px; }
+    .message-list::-webkit-scrollbar-thumb { background: #BBDEFB; border-radius: 4px; }
+    .msg-card { background: #F5F9FF; border: 1px solid #E3F2FD; border-radius: 14px; padding: 15px 18px; display: flex; justify-content: space-between; align-items: center; gap: 15px; }
+    .msg-left { flex: 1; }
+    .msg-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .patient-tag { background: #E3F2FD; color: #1E88E5; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 10px; }
+    .msg-time { font-size: 11px; color: #aaa; }
+    .msg-text { font-size: 14px; color: #333; line-height: 1.5; }
+    .emotion-tag { padding: 5px 12px; border-radius: 20px; color: white; font-size: 11px; font-weight: 700; white-space: nowrap; }
+
+    .empty-state { text-align: center; padding: 40px; color: #aaa; font-size: 15px; }
+  </style>
 </head>
 <body>
-  <div class="dashboard-wrapper">
 
-    <div class="dash-header">
-      <span class="logo-small">+ EmoCare</span>
-      <span class="header-title">Doctor Dashboard</span>
-      <span class="doctor-name">Dr. Ahmed</span>
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand">
+      <div class="nav-icon">💙</div>
+      <span class="nav-title">EmoCare</span>
+    </a>
+    <div class="nav-menu">
+      <a href="index.html">🏠 Home</a>
+      <a href="patient-chat.html">💬 Patient</a>
+      <a href="doctor-dashboard.html" class="active">🩺 Doctor</a>
+      <a href="admin.html">⚙️ Admin</a>
+      <a href="analytics.html">📊 Analytics</a>
+    </div>
+  </nav>
+
+  <div class="wrapper">
+    <div class="page-header">
+      <h1>🩺 Doctor Dashboard</h1>
+      <span class="doctor-badge">Dr. Ahmed — Live Monitor</span>
     </div>
 
-    <div id="stressAlert" class="stress-banner" style="display:none;">
-      🚨 ALERT! A patient is under STRESS — Immediate attention required!
+    <div class="stress-alert" id="stressAlert">
+      🚨 ALERT! একজন রোগী STRESS এ আছেন — এখনই attention দিন!
     </div>
 
-    <div class="dash-stats" id="dashStats">
+    <div class="stats">
       <div class="stat-card">
-        <p class="stat-num" id="totalCount">0</p>
-        <p class="stat-label">Total Messages</p>
+        <div class="stat-num" id="totalCount">0</div>
+        <div class="stat-label">Total Messages</div>
       </div>
       <div class="stat-card stress">
-        <p class="stat-num" id="stressCount">0</p>
-        <p class="stat-label">Stress Alerts</p>
+        <div class="stat-num" id="stressCount">0</div>
+        <div class="stat-label">Stress Alerts</div>
       </div>
       <div class="stat-card positive">
-        <p class="stat-num" id="positiveCount">0</p>
-        <p class="stat-label">Positive</p>
+        <div class="stat-num" id="positiveCount">0</div>
+        <div class="stat-label">Positive</div>
       </div>
       <div class="stat-card negative">
-        <p class="stat-num" id="negativeCount">0</p>
-        <p class="stat-label">Negative</p>
+        <div class="stat-num" id="negativeCount">0</div>
+        <div class="stat-label">Negative</div>
       </div>
     </div>
 
-    <div class="dash-content">
-      <h3 class="section-title">Patient Messages</h3>
-      <div id="messageList" class="message-list">
-        <p class="loading-text">Loading messages...</p>
+    <div class="card">
+      <h3>💬 Reply to Patient</h3>
+      <div class="reply-area">
+        <input type="text" id="doctorReply" placeholder="রোগীকে reply লিখুন..." />
+        <button onclick="sendReply()">Send Reply ➤</button>
       </div>
+      <div class="reply-sent" id="replyList"></div>
     </div>
 
+    <div class="card">
+      <h3>📋 Patient Messages — Real-time</h3>
+      <div class="message-list" id="messageList">
+        <div class="empty-state">⏳ Loading messages...</div>
+      </div>
+    </div>
   </div>
 
   <script type="module">
     import { db } from './js/firebase-config.js';
-    import { ref, onValue } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js";
+    import { ref, onValue, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-    const emotionColors = {
-      STRESS: '#e53935',
-      NEGATIVE: '#FB8C00',
-      POSITIVE: '#43A047',
-      NEUTRAL: '#888'
-    };
+    const colors = { STRESS: '#e53935', NEGATIVE: '#FB8C00', POSITIVE: '#43A047', NEUTRAL: '#888' };
 
     onValue(ref(db, 'messages'), (snapshot) => {
-      const messageList = document.getElementById('messageList');
-      messageList.innerHTML = '';
-
-      let total = 0, stress = 0, positive = 0, negative = 0;
-      let hasStress = false;
+      const list = document.getElementById('messageList');
+      list.innerHTML = '';
+      let total = 0, stress = 0, positive = 0, negative = 0, hasStress = false;
 
       if (snapshot.exists()) {
-        const messages = snapshot.val();
-
-        Object.values(messages).reverse().forEach(msg => {
+        Object.values(snapshot.val()).reverse().forEach(msg => {
           total++;
           if (msg.emotion === 'STRESS') { stress++; hasStress = true; }
           if (msg.emotion === 'POSITIVE') positive++;
           if (msg.emotion === 'NEGATIVE') negative++;
 
-          const time = new Date(msg.timestamp).toLocaleTimeString();
-          const color = emotionColors[msg.emotion] || '#888';
+          const time = new Date(msg.timestamp).toLocaleString('bn-BD');
+          const color = colors[msg.emotion] || '#888';
 
           const div = document.createElement('div');
-          div.className = 'msg-row';
+          div.className = 'msg-card';
           div.innerHTML = `
-            <div class="msg-info">
-              <span class="patient-id">Patient: ${msg.patientId || 'Unknown'}</span>
-              <span class="msg-time">${time}</span>
+            <div class="msg-left">
+              <div class="msg-meta">
+                <span class="patient-tag">👤 ${msg.patientId || 'Patient'}</span>
+                <span class="msg-time">${time}</span>
+              </div>
+              <div class="msg-text">${msg.message}</div>
             </div>
-            <div class="msg-text">${msg.message}</div>
-            <span class="emotion-tag" style="background:${color}">${msg.emotion}</span>
-          `;
-          messageList.appendChild(div);
+            <span class="emotion-tag" style="background:${color}">${msg.emotion}</span>`;
+          list.appendChild(div);
         });
-
       } else {
-        messageList.innerHTML = '<p class="loading-text">No messages yet.</p>';
+        list.innerHTML = '<div class="empty-state">💬 কোনো message নেই।</div>';
       }
 
       document.getElementById('totalCount').textContent = total;
       document.getElementById('stressCount').textContent = stress;
       document.getElementById('positiveCount').textContent = positive;
       document.getElementById('negativeCount').textContent = negative;
-
       document.getElementById('stressAlert').style.display = hasStress ? 'block' : 'none';
+    });
+
+    window.sendReply = function () {
+      const input = document.getElementById('doctorReply');
+      const text = input.value.trim();
+      if (!text) return;
+      push(ref(db, 'doctorReplies'), { message: text, doctor: 'Dr. Ahmed', timestamp: Date.now() });
+      const div = document.createElement('div');
+      div.className = 'reply-item';
+      div.innerHTML = `✅ Reply sent: "${text}"`;
+      document.getElementById('replyList').appendChild(div);
+      input.value = '';
+    }
+
+    document.getElementById('doctorReply').addEventListener('keypress', e => {
+      if (e.key === 'Enter') window.sendReply();
     });
   </script>
 </body>
