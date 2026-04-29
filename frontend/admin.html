@@ -1,189 +1,895 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EmoCare - Admin Panel</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-    body { background: #F0F4FF; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EmoCare — Admin Panel</title>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #070a0f;
+  --surface: #0e1219;
+  --surface2: #141920;
+  --surface3: #1a2130;
+  --border: rgba(255,255,255,0.06);
+  --border2: rgba(255,255,255,0.1);
+  --text: #dde3ef;
+  --muted: #5a6478;
+  --accent: #3b82f6;
+  --accent2: #06b6d4;
+  --stress: #ef4444;
+  --negative: #f97316;
+  --positive: #22c55e;
+  --neutral: #6b7280;
+  --warning: #eab308;
+  --r: 12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
 
-    .navbar { background: white; padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.08); position: sticky; top: 0; z-index: 100; }
-    .nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-    .nav-icon { background: #1E88E5; color: white; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-    .nav-title { font-size: 20px; font-weight: 700; color: #1E88E5; }
-    .nav-menu { display: flex; gap: 8px; }
-    .nav-menu a { color: #555; text-decoration: none; font-size: 13px; padding: 7px 14px; border-radius: 20px; transition: all 0.2s; }
-    .nav-menu a:hover, .nav-menu a.active { background: #E3F2FD; color: #1E88E5; font-weight: 600; }
+/* grid layout */
+.shell{display:grid;grid-template-columns:220px 1fr;grid-template-rows:56px 1fr;height:100vh}
 
-    .wrapper { max-width: 960px; margin: 30px auto; padding: 0 20px; }
-    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-    .page-header h1 { font-size: 24px; font-weight: 700; color: #1a1a2e; }
-    .admin-badge { background: #F3E5F5; color: #7B1FA2; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+/* topbar */
+.topbar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:var(--surface);border-bottom:1px solid var(--border);z-index:20}
+.logo{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;letter-spacing:-.02em}
+.logo-icon{width:30px;height:30px;background:linear-gradient(135deg,#3b82f6,#06b6d4);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.topbar-right{display:flex;align-items:center;gap:14px}
+.live-badge{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--positive);background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);padding:4px 10px;border-radius:999px;font-weight:500}
+.live-dot{width:6px;height:6px;background:var(--positive);border-radius:50%;animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.admin-chip{font-size:11px;color:var(--muted);background:var(--surface2);border:1px solid var(--border);padding:4px 12px;border-radius:999px}
+.topbar-btn{background:none;border:1px solid var(--border);color:var(--muted);font-family:'Syne',sans-serif;font-size:11px;padding:5px 12px;border-radius:8px;cursor:pointer;transition:all .2s}
+.topbar-btn:hover{border-color:var(--accent);color:var(--accent)}
 
-    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px; }
-    .stat-card { background: white; border-radius: 16px; padding: 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.06); border-top: 4px solid #E3F2FD; }
-    .stat-card.stress { border-top-color: #e53935; }
-    .stat-card.positive { border-top-color: #43A047; }
-    .stat-card.negative { border-top-color: #FB8C00; }
-    .stat-num { font-size: 36px; font-weight: 800; color: #1E88E5; }
-    .stat-card.stress .stat-num { color: #e53935; }
-    .stat-card.positive .stat-num { color: #43A047; }
-    .stat-card.negative .stat-num { color: #FB8C00; }
-    .stat-label { font-size: 12px; color: #888; margin-top: 5px; }
+/* sidebar */
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:16px 12px;display:flex;flex-direction:column;gap:4px;overflow-y:auto}
+.sidebar::-webkit-scrollbar{width:0}
+.nav-section{font-size:9px;font-weight:600;letter-spacing:.1em;color:var(--muted);padding:12px 8px 6px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer;font-size:12px;font-weight:500;color:var(--muted);transition:all .15s;border:1px solid transparent}
+.nav-item:hover{background:var(--surface2);color:var(--text)}
+.nav-item.active{background:rgba(59,130,246,.12);color:var(--accent);border-color:rgba(59,130,246,.2)}
+.nav-icon{font-size:14px;width:20px;text-align:center}
+.nav-badge{margin-left:auto;background:var(--stress);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:999px;min-width:18px;text-align:center}
+.nav-badge.green{background:var(--positive)}
+.sidebar-footer{margin-top:auto;padding-top:12px;border-top:1px solid var(--border)}
+.sys-info-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:11px}
+.sys-row{display:flex;justify-content:space-between;margin-bottom:6px;color:var(--muted)}
+.sys-row span:last-child{color:var(--text);font-family:'DM Mono',monospace}
+.sys-row:last-child{margin-bottom:0}
 
-    .card { background: white; border-radius: 16px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.06); margin-bottom: 20px; }
-    .card h3 { font-size: 16px; font-weight: 700; color: #1a1a2e; margin-bottom: 18px; }
+/* main */
+.main{overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px}
+.main::-webkit-scrollbar{width:4px}
+.main::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 
-    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+/* section tabs */
+.tab-bar{display:flex;gap:6px;flex-wrap:wrap}
+.tab-btn{font-family:'Syne',sans-serif;font-size:11px;font-weight:500;padding:7px 16px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);cursor:pointer;transition:all .15s}
+.tab-btn.active{background:var(--accent);color:#fff;border-color:transparent}
+.tab-content{display:none}
+.tab-content.show{display:block}
 
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th { background: #F0F4FF; padding: 10px 12px; text-align: left; color: #1E88E5; font-weight: 600; border-radius: 8px; }
-    td { padding: 10px 12px; border-bottom: 1px solid #F0F4FF; color: #444; }
+/* stats row */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;transition:border-color .2s}
+.stat-card:hover{border-color:var(--border2)}
+.stat-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.stat-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.stat-trend{font-size:10px;font-weight:500;padding:2px 7px;border-radius:999px}
+.trend-up{background:rgba(34,197,94,.12);color:var(--positive)}
+.trend-down{background:rgba(239,68,68,.12);color:var(--stress)}
+.stat-val{font-size:26px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.stat-lbl{font-size:11px;color:var(--muted);margin-top:4px}
 
-    .badge { padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 700; color: white; }
-    .badge.stress { background: #e53935; }
-    .badge.positive { background: #43A047; }
-    .badge.negative { background: #FB8C00; }
-    .badge.neutral { background: #888; }
-    .badge.active { background: #43A047; }
+/* table */
+.table-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.search-box{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:7px 12px;flex:1;min-width:180px}
+.search-box input{background:none;border:none;outline:none;color:var(--text);font-family:'Syne',sans-serif;font-size:12px;width:100%}
+.search-box input::placeholder{color:var(--muted)}
+.filter-select{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:7px 12px;color:var(--text);font-family:'Syne',sans-serif;font-size:12px;outline:none;cursor:pointer}
+.action-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-family:'Syne',sans-serif;font-size:11px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.action-btn:hover{border-color:var(--accent);color:var(--accent)}
+.action-btn.danger:hover{border-color:var(--stress);color:var(--stress)}
+.action-btn.success:hover{border-color:var(--positive);color:var(--positive)}
 
-    .clear-btn { background: #e53935; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 600; margin-top: 15px; transition: all 0.2s; }
-    .clear-btn:hover { background: #c62828; }
+.data-table{width:100%;border-collapse:collapse;font-size:12px}
+.data-table th{text-align:left;padding:10px 12px;font-size:10px;font-weight:600;letter-spacing:.06em;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap}
+.data-table td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tbody tr{transition:background .12s}
+.data-table tbody tr:hover{background:var(--surface2)}
+.data-table tbody tr.selected{background:rgba(59,130,246,.08)}
 
-    .sys-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #F0F4FF; font-size: 14px; }
-    .sys-row:last-child { border-bottom: none; }
-    .sys-row .key { color: #888; }
-    .sys-row .val { font-weight: 600; color: #1a1a2e; }
+.emo-pill{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:600;padding:3px 10px;border-radius:999px;letter-spacing:.03em}
+.emo-pill.stress  {background:rgba(239,68,68,.15);  color:#f87171; border:1px solid rgba(239,68,68,.3)}
+.emo-pill.negative{background:rgba(249,115,22,.15); color:#fb923c; border:1px solid rgba(249,115,22,.3)}
+.emo-pill.positive{background:rgba(34,197,94,.15);  color:#4ade80; border:1px solid rgba(34,197,94,.3)}
+.emo-pill.neutral {background:rgba(107,114,128,.15);color:#9ca3af; border:1px solid rgba(107,114,128,.3)}
+.emo-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
 
-    .empty-state { text-align: center; padding: 30px; color: #aaa; }
-  </style>
+.conf-bar{display:flex;align-items:center;gap:6px}
+.conf-track{width:60px;height:3px;background:var(--border2);border-radius:2px;overflow:hidden}
+.conf-fill{height:100%;border-radius:2px}
+.conf-pct{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace}
+
+.checkbox{width:14px;height:14px;accent-color:var(--accent);cursor:pointer}
+
+.row-actions{display:flex;gap:6px}
+.row-btn{background:none;border:1px solid var(--border);color:var(--muted);font-size:10px;padding:3px 8px;border-radius:6px;cursor:pointer;transition:all .15s}
+.row-btn:hover{border-color:var(--accent);color:var(--accent)}
+.row-btn.del:hover{border-color:var(--stress);color:var(--stress)}
+
+/* pagination */
+.pagination{display:flex;align-items:center;gap:8px;justify-content:center;margin-top:16px}
+.page-btn{background:var(--surface2);border:1px solid var(--border);color:var(--muted);width:30px;height:30px;border-radius:7px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.page-btn:hover{border-color:var(--accent);color:var(--accent)}
+.page-btn.active{background:var(--accent);color:#fff;border-color:transparent}
+.page-info{font-size:11px;color:var(--muted)}
+
+/* card */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:600}
+.card-subtitle{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* user management */
+.user-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.user-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;transition:border-color .2s}
+.user-card:hover{border-color:var(--border2)}
+.user-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.user-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0}
+.user-name{font-size:12px;font-weight:600}
+.user-role{font-size:10px;color:var(--muted);margin-top:1px}
+.user-meta{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted)}
+.user-meta-row{display:flex;justify-content:space-between}
+.user-meta-row span:last-child{color:var(--text)}
+.user-actions{display:flex;gap:6px;margin-top:10px}
+.usr-btn{flex:1;padding:5px;border-radius:7px;border:1px solid var(--border);background:none;color:var(--muted);font-family:'Syne',sans-serif;font-size:10px;cursor:pointer;transition:all .15s}
+.usr-btn:hover{border-color:var(--accent);color:var(--accent)}
+.usr-btn.danger:hover{border-color:var(--stress);color:var(--stress)}
+.role-badge{display:inline-block;font-size:9px;font-weight:600;padding:2px 8px;border-radius:999px;letter-spacing:.04em}
+.role-badge.patient{background:rgba(59,130,246,.15);color:#60a5fa}
+.role-badge.doctor {background:rgba(34,197,94,.15); color:#4ade80}
+.role-badge.admin  {background:rgba(234,179,8,.15);  color:#fbbf24}
+
+/* system health */
+.health-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.health-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;text-align:center}
+.health-icon{font-size:24px;margin-bottom:8px}
+.health-val{font-size:22px;font-weight:700;font-family:'DM Mono',monospace}
+.health-lbl{font-size:11px;color:var(--muted);margin-top:3px}
+.health-bar-wrap{margin-top:10px}
+.health-bar-track{height:4px;background:var(--border2);border-radius:2px;overflow:hidden}
+.health-bar-fill{height:100%;border-radius:2px;transition:width .5s}
+
+/* log list */
+.log-list{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto}
+.log-list::-webkit-scrollbar{width:3px}
+.log-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.log-item{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;background:var(--surface2);border-radius:8px;font-size:11px}
+.log-time{font-family:'DM Mono',monospace;color:var(--muted);white-space:nowrap;font-size:10px}
+.log-msg{color:var(--text);line-height:1.4}
+.log-level{font-size:9px;font-weight:600;padding:1px 6px;border-radius:4px;white-space:nowrap}
+.log-level.info   {background:rgba(59,130,246,.2);color:#60a5fa}
+.log-level.warn   {background:rgba(234,179,8,.2);  color:#fbbf24}
+.log-level.error  {background:rgba(239,68,68,.2);  color:#f87171}
+.log-level.success{background:rgba(34,197,94,.2);  color:#4ade80}
+
+/* toast */
+#toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:500;z-index:1000;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none}
+#toast.show{opacity:1;transform:translateY(0)}
+#toast.success{background:#14532d;color:#4ade80;border:1px solid rgba(34,197,94,.3)}
+#toast.error  {background:#450a0a;color:#f87171;border:1px solid rgba(239,68,68,.3)}
+#toast.info   {background:#1e3a5f;color:#60a5fa;border:1px solid rgba(59,130,246,.3)}
+
+/* modal */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center}
+.modal-bg.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:24px;width:420px;max-width:95vw;animation:modal-up .3s cubic-bezier(.34,1.56,.64,1)}
+@keyframes modal-up{from{transform:scale(.85) translateY(20px)}to{transform:scale(1) translateY(0)}}
+.modal h3{font-size:16px;font-weight:700;margin-bottom:8px}
+.modal p{font-size:12px;color:var(--muted);margin-bottom:20px;line-height:1.6}
+.modal-btns{display:flex;gap:10px}
+.modal-confirm{flex:1;padding:10px;border:none;border-radius:10px;background:var(--stress);color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:600;cursor:pointer}
+.modal-cancel{flex:1;padding:10px;border-radius:10px;border:1px solid var(--border);background:none;color:var(--muted);font-family:'Syne',sans-serif;font-size:13px;cursor:pointer}
+.modal-cancel:hover{background:var(--surface2)}
+
+/* selection toolbar */
+.sel-toolbar{display:none;align-items:center;gap:10px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);border-radius:10px;padding:8px 14px;margin-bottom:10px;font-size:12px;color:var(--accent)}
+.sel-toolbar.show{display:flex}
+.sel-count{font-weight:600;margin-right:4px}
+
+/* responsive */
+@media(max-width:768px){
+  .shell{grid-template-columns:1fr;grid-template-rows:56px auto 1fr}
+  .sidebar{display:none}
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .health-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
 </head>
 <body>
 
-  <nav class="navbar">
-    <a href="index.html" class="nav-brand">
-      <div class="nav-icon">💙</div>
-      <span class="nav-title">EmoCare</span>
-    </a>
-    <div class="nav-menu">
-      <a href="index.html">🏠 Home</a>
-      <a href="patient-chat.html">💬 Patient</a>
-      <a href="doctor-dashboard.html">🩺 Doctor</a>
-      <a href="admin.html" class="active">⚙️ Admin</a>
-      <a href="analytics.html">📊 Analytics</a>
+<!-- MODAL -->
+<div class="modal-bg" id="confirm-modal">
+  <div class="modal">
+    <h3 id="modal-title">⚠️ নিশ্চিত করুন</h3>
+    <p id="modal-body">এই কাজটি করলে data permanently মুছে যাবে।</p>
+    <div class="modal-btns">
+      <button class="modal-confirm" id="modal-ok">হ্যাঁ, করো</button>
+      <button class="modal-cancel" onclick="closeModal()">বাতিল</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<div class="shell">
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="logo">
+      <div class="logo-icon">🏥</div>
+      EmoCare <span style="color:var(--muted);font-weight:400;font-size:12px;margin-left:4px">Admin</span>
+    </div>
+    <div class="topbar-right">
+      <div class="live-badge"><div class="live-dot"></div> Live</div>
+      <span class="admin-chip">👤 Admin</span>
+      <button class="topbar-btn" onclick="exportAllCSV()">⬇ Export All</button>
+      <button class="topbar-btn" style="border-color:rgba(239,68,68,.3);color:var(--stress)" onclick="showClearAllModal()">🗑 Clear DB</button>
+    </div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" onclick="switchTab('overview',this)">
+      <span class="nav-icon">📊</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="switchTab('messages',this)">
+      <span class="nav-icon">💬</span> All Messages
+      <span class="nav-badge" id="msg-count-badge">—</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('sos',this)">
+      <span class="nav-icon">🚨</span> SOS Alerts
+      <span class="nav-badge" id="sos-count-badge">0</span>
+    </div>
+
+    <div class="nav-section">Management</div>
+    <div class="nav-item" onclick="switchTab('users',this)">
+      <span class="nav-icon">👥</span> Users
+    </div>
+    <div class="nav-item" onclick="switchTab('system',this)">
+      <span class="nav-icon">⚙️</span> System
+    </div>
+    <div class="nav-item" onclick="switchTab('logs',this)">
+      <span class="nav-icon">📋</span> Activity Logs
+      <span class="nav-badge green" id="log-badge">—</span>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="sys-info-card">
+        <div class="sys-row"><span>Version</span><span>v3.0</span></div>
+        <div class="sys-row"><span>Firebase</span><span id="fb-status">●</span></div>
+        <div class="sys-row"><span>Uptime</span><span id="uptime-val">—</span></div>
+        <div class="sys-row"><span>Student</span><span>2210036</span></div>
+      </div>
     </div>
   </nav>
 
-  <div class="wrapper">
-    <div class="page-header">
-      <h1>⚙️ Admin Panel</h1>
-      <span class="admin-badge">System Management</span>
-    </div>
+  <!-- MAIN -->
+  <main class="main" id="main-area">
 
-    <div class="stats">
-      <div class="stat-card">
-        <div class="stat-num" id="totalCount">0</div>
-        <div class="stat-label">Total Messages</div>
+    <!-- ═══ OVERVIEW ═══ -->
+    <div class="tab-content show" id="tab-overview">
+      <div class="stats-row" id="stats-row">
+        <div class="stat-card">
+          <div class="stat-top">
+            <div class="stat-icon" style="background:rgba(59,130,246,.15)">💬</div>
+            <span class="stat-trend trend-up" id="trend-msg">+0</span>
+          </div>
+          <div class="stat-val" id="stat-total">0</div>
+          <div class="stat-lbl">Total Messages</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-top">
+            <div class="stat-icon" style="background:rgba(239,68,68,.15)">🚨</div>
+            <span class="stat-trend trend-down" id="stat-sos-badge">0</span>
+          </div>
+          <div class="stat-val" id="stat-sos">0</div>
+          <div class="stat-lbl">SOS Alerts</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-top">
+            <div class="stat-icon" style="background:rgba(34,197,94,.15)">👤</div>
+            <span class="stat-trend trend-up">Active</span>
+          </div>
+          <div class="stat-val" id="stat-patients">0</div>
+          <div class="stat-lbl">Patients</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-top">
+            <div class="stat-icon" style="background:rgba(234,179,8,.15)">⚠️</div>
+            <span class="stat-trend trend-down" id="stress-pct-badge">0%</span>
+          </div>
+          <div class="stat-val" id="stat-stress">0</div>
+          <div class="stat-lbl">Stress Messages</div>
+        </div>
       </div>
-      <div class="stat-card stress">
-        <div class="stat-num" id="stressCount">0</div>
-        <div class="stat-label">Stress Cases</div>
-      </div>
-      <div class="stat-card positive">
-        <div class="stat-num" id="positiveCount">0</div>
-        <div class="stat-label">Positive</div>
-      </div>
-      <div class="stat-card negative">
-        <div class="stat-num" id="negativeCount">0</div>
-        <div class="stat-label">Negative</div>
-      </div>
-    </div>
 
-    <div class="card">
-      <h3>📋 All Patient Messages</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Patient ID</th>
-            <th>Message</th>
-            <th>Emotion</th>
-            <th>Time</th>
-          </tr>
-        </thead>
-        <tbody id="messageTable">
-          <tr><td colspan="4" class="empty-state">⏳ Loading...</td></tr>
-        </tbody>
-      </table>
-      <button class="clear-btn" onclick="clearAllData()">🗑️ Clear All Data</button>
-    </div>
-
-    <div class="grid2">
+      <!-- Emotion breakdown -->
       <div class="card">
-        <h3>⚙️ System Information</h3>
-        <div class="sys-row"><span class="key">System Name</span><span class="val">EmoCare Telemedicine</span></div>
-        <div class="sys-row"><span class="key">Version</span><span class="val">1.0.0</span></div>
-        <div class="sys-row"><span class="key">Database</span><span class="val">Firebase Realtime DB</span></div>
-        <div class="sys-row"><span class="key">AI Model</span><span class="val">NLP Sentiment Analysis</span></div>
-        <div class="sys-row"><span class="key">Backend</span><span class="val">Flask Python</span></div>
-        <div class="sys-row"><span class="key">Language</span><span class="val">Bangla + English</span></div>
-        <div class="sys-row"><span class="key">Status</span><span class="val"><span class="badge active">● Active</span></span></div>
+        <div class="card-header">
+          <div><div class="card-title">📈 Emotion Breakdown</div><div class="card-subtitle">All time distribution</div></div>
+        </div>
+        <div id="emo-breakdown" style="display:flex;flex-direction:column;gap:10px"></div>
       </div>
 
+      <!-- Recent SOS -->
       <div class="card">
-        <h3>👥 User Roles</h3>
-        <div class="sys-row"><span class="key">👤 Patient</span><span class="val">Chat & Emotion Detection</span></div>
-        <div class="sys-row"><span class="key">🩺 Doctor</span><span class="val">Dashboard & Alerts</span></div>
-        <div class="sys-row"><span class="key">⚙️ Admin</span><span class="val">System Management</span></div>
-        <div class="sys-row"><span class="key">🤖 AI Bot</span><span class="val">24/7 Auto Response</span></div>
-        <div class="sys-row"><span class="key">Country</span><span class="val">🇧🇩 Bangladesh</span></div>
-        <div class="sys-row"><span class="key">Support</span><span class="val">Bangla & English</span></div>
+        <div class="card-header">
+          <div><div class="card-title">🚨 Recent SOS Alerts</div></div>
+          <button class="action-btn" onclick="switchTab('sos',document.querySelector('[onclick*=sos]'))">View All</button>
+        </div>
+        <table class="data-table" id="recent-sos-table">
+          <thead><tr>
+            <th>Patient</th><th>Message</th><th>Time</th><th>Status</th>
+          </tr></thead>
+          <tbody id="recent-sos-body"><tr><td colspan="4" style="color:var(--muted);text-align:center;padding:20px">Loading...</td></tr></tbody>
+        </table>
       </div>
     </div>
-  </div>
 
-  <script type="module">
-    import { db } from './js/firebase-config.js';
-    import { ref, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    <!-- ═══ MESSAGES ═══ -->
+    <div class="tab-content" id="tab-messages">
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">💬 All Messages</div><div class="card-subtitle" id="msg-sub">Loading...</div></div>
+        </div>
+        <div class="table-toolbar">
+          <div class="search-box"><span>🔍</span><input type="text" id="msg-search" placeholder="Search messages, patients..." oninput="filterMessages()"></div>
+          <select class="filter-select" id="emo-filter" onchange="filterMessages()">
+            <option value="">All Emotions</option>
+            <option value="STRESS">🔴 STRESS</option>
+            <option value="NEGATIVE">🟠 NEGATIVE</option>
+            <option value="POSITIVE">🟢 POSITIVE</option>
+            <option value="NEUTRAL">⚪ NEUTRAL</option>
+          </select>
+          <button class="action-btn success" onclick="exportCSV()">⬇ Export CSV</button>
+          <button class="action-btn danger" onclick="showClearMessagesModal()">🗑 Clear Messages</button>
+        </div>
+        <div class="sel-toolbar" id="sel-toolbar">
+          <span><span class="sel-count" id="sel-count">0</span> selected</span>
+          <button class="action-btn danger" onclick="deleteSelected()">🗑 Delete Selected</button>
+          <button class="action-btn" onclick="clearSelection()">✕ Clear</button>
+        </div>
+        <table class="data-table" id="msg-table">
+          <thead><tr>
+            <th><input type="checkbox" class="checkbox" id="select-all" onchange="toggleSelectAll(this)"></th>
+            <th>#</th><th>Patient</th><th>Message</th><th>Emotion</th><th>Confidence</th><th>Time</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="msg-body"><tr><td colspan="8" style="color:var(--muted);text-align:center;padding:30px">Loading data...</td></tr></tbody>
+        </table>
+        <div class="pagination" id="pagination"></div>
+      </div>
+    </div>
 
-    onValue(ref(db, 'messages'), (snapshot) => {
-      const tbody = document.getElementById('messageTable');
-      tbody.innerHTML = '';
-      let total = 0, stress = 0, positive = 0, negative = 0;
+    <!-- ═══ SOS ═══ -->
+    <div class="tab-content" id="tab-sos">
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">🚨 SOS Alerts</div><div class="card-subtitle">Emergency alerts from patients</div></div>
+          <button class="action-btn danger" onclick="clearSOSAlerts()">Clear All Alerts</button>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>Patient</th><th>Trigger Message</th><th>Priority</th><th>Status</th><th>Time</th><th>Actions</th></tr></thead>
+          <tbody id="sos-body"><tr><td colspan="6" style="color:var(--muted);text-align:center;padding:30px">No SOS alerts</td></tr></tbody>
+        </table>
+      </div>
+    </div>
 
-      if (snapshot.exists()) {
-        Object.values(snapshot.val()).reverse().forEach(msg => {
-          total++;
-          if (msg.emotion === 'STRESS') stress++;
-          if (msg.emotion === 'POSITIVE') positive++;
-          if (msg.emotion === 'NEGATIVE') negative++;
+    <!-- ═══ USERS ═══ -->
+    <div class="tab-content" id="tab-users">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="font-size:14px;font-weight:600">👥 User Management</div>
+        <button class="action-btn success" onclick="addDemoUser()">+ Add User</button>
+      </div>
+      <div class="user-grid" id="user-grid">
+        <!-- populated by JS -->
+      </div>
+    </div>
 
-          const time = new Date(msg.timestamp).toLocaleString('bn-BD');
-          const em = (msg.emotion || 'neutral').toLowerCase();
-          tbody.innerHTML += `
-            <tr>
-              <td>👤 ${msg.patientId || 'Unknown'}</td>
-              <td>${msg.message}</td>
-              <td><span class="badge ${em}">${msg.emotion}</span></td>
-              <td style="font-size:11px;color:#aaa;">${time}</td>
-            </tr>`;
-        });
-      } else {
-        tbody.innerHTML = '<tr><td colspan="4" class="empty-state">💬 কোনো data নেই।</td></tr>';
-      }
+    <!-- ═══ SYSTEM ═══ -->
+    <div class="tab-content" id="tab-system">
+      <div class="health-grid" id="health-grid">
+        <div class="health-card">
+          <div class="health-icon">🔥</div>
+          <div class="health-val" id="h-firebase" style="color:var(--positive)">OK</div>
+          <div class="health-lbl">Firebase Status</div>
+          <div class="health-bar-wrap"><div class="health-bar-track"><div class="health-bar-fill" id="fb-bar" style="width:100%;background:var(--positive)"></div></div></div>
+        </div>
+        <div class="health-card">
+          <div class="health-icon">📡</div>
+          <div class="health-val" id="h-api">—</div>
+          <div class="health-lbl">Claude API</div>
+          <div class="health-bar-wrap"><div class="health-bar-track"><div class="health-bar-fill" id="api-bar" style="width:70%;background:var(--accent)"></div></div></div>
+        </div>
+        <div class="health-card">
+          <div class="health-icon">💾</div>
+          <div class="health-val" id="h-storage">—</div>
+          <div class="health-lbl">DB Records</div>
+          <div class="health-bar-wrap"><div class="health-bar-track"><div class="health-bar-fill" id="storage-bar" style="width:20%;background:var(--warning)"></div></div></div>
+        </div>
+      </div>
 
-      document.getElementById('totalCount').textContent = total;
-      document.getElementById('stressCount').textContent = stress;
-      document.getElementById('positiveCount').textContent = positive;
-      document.getElementById('negativeCount').textContent = negative;
+      <div class="card" style="margin-top:14px">
+        <div class="card-header"><div class="card-title">⚙️ System Settings</div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="health-card" style="text-align:left;cursor:pointer" onclick="showToast('✅ Auto-alerts enabled','success')">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><div style="font-size:12px;font-weight:600">Auto SOS Alerts</div><div style="font-size:10px;color:var(--muted);margin-top:3px">Auto alert on STRESS detect</div></div>
+              <div id="toggle-sos" style="width:36px;height:20px;background:var(--positive);border-radius:10px;cursor:pointer;position:relative;transition:background .2s" onclick="toggleSetting(this)"><div style="position:absolute;top:3px;right:3px;width:14px;height:14px;background:#fff;border-radius:50%;transition:right .2s"></div></div>
+            </div>
+          </div>
+          <div class="health-card" style="text-align:left;cursor:pointer">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div><div style="font-size:12px;font-weight:600">Data Retention</div><div style="font-size:10px;color:var(--muted);margin-top:3px">Keep messages 30 days</div></div>
+              <div style="width:36px;height:20px;background:var(--accent);border-radius:10px;cursor:pointer;position:relative" onclick="toggleSetting(this)"><div style="position:absolute;top:3px;right:3px;width:14px;height:14px;background:#fff;border-radius:50%"></div></div>
+            </div>
+          </div>
+          <div class="health-card" style="text-align:left">
+            <div><div style="font-size:12px;font-weight:600">AI Model</div><div style="font-size:10px;color:var(--muted);margin-top:3px">claude-sonnet-4-20250514</div></div>
+            <div style="margin-top:8px;font-size:11px;color:var(--accent)">● Active</div>
+          </div>
+          <div class="health-card" style="text-align:left">
+            <div><div style="font-size:12px;font-weight:600">Emotion Classes</div><div style="font-size:10px;color:var(--muted);margin-top:3px">STRESS / NEGATIVE / POSITIVE / NEUTRAL</div></div>
+            <div style="margin-top:8px;font-size:11px;color:var(--positive)">4 classes active</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px">
+        <div class="card-header"><div class="card-title">🗑️ Danger Zone</div></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="action-btn danger" onclick="showClearMessagesModal()">Clear All Messages</button>
+          <button class="action-btn danger" onclick="clearSOSAlerts()">Clear SOS Alerts</button>
+          <button class="action-btn danger" onclick="showClearAllModal()">⚠️ Reset Entire Database</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ LOGS ═══ -->
+    <div class="tab-content" id="tab-logs">
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title">📋 Activity Logs</div><div class="card-subtitle">System events & actions</div></div>
+          <button class="action-btn danger" onclick="clearLogs()">Clear Logs</button>
+        </div>
+        <div class="log-list" id="log-list">
+          <!-- populated -->
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ════ FIREBASE ════
+const firebaseConfig = {
+  apiKey: "AIzaSyC1jyVCVwbYWZTMDLmiqQop8lmB4kZErZc",
+  authDomain: "emotion-telemedicine.firebaseapp.com",
+  databaseURL: "https://emotion-telemedicine-default-rtdb.firebaseio.com",
+  projectId: "emotion-telemedicine",
+  storageBucket: "emotion-telemedicine.appspot.com",
+  messagingSenderId: "26308050974",
+  appId: "1:26308050974:web:bdbf0ace02321bf1b5ee0f"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ════ STATE ════
+let allMessages = [];
+let filteredMessages = [];
+let sosAlerts = [];
+let selectedRows = new Set();
+let currentPage = 1;
+const PAGE_SIZE = 15;
+const logs = [];
+const startTime = Date.now();
+
+// ════ INIT ════
+document.getElementById('fb-status').textContent = '● Connected';
+document.getElementById('fb-status').style.color = 'var(--positive)';
+
+setInterval(() => {
+  const s = Math.floor((Date.now() - startTime) / 1000);
+  const m = Math.floor(s / 60), sec = s % 60;
+  document.getElementById('uptime-val').textContent = `${m}m ${sec}s`;
+}, 1000);
+
+addLog('System initialized', 'success');
+addLog('Firebase connected', 'info');
+addLog('Admin panel loaded', 'info');
+
+// ════ FIREBASE LISTENERS ════
+db.ref('messages').on('value', snap => {
+  allMessages = [];
+  if (snap.exists()) {
+    snap.forEach(patientSnap => {
+      patientSnap.forEach(msgSnap => {
+        allMessages.push({ id: msgSnap.key, patientId: patientSnap.key, ...msgSnap.val() });
+      });
     });
+  }
+  allMessages.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  filteredMessages = [...allMessages];
+  updateStats();
+  renderMessages();
+  addLog(`Messages refreshed (${allMessages.length} total)`, 'info');
+});
 
-    window.clearAllData = function () {
-      if (confirm('সব data delete করবেন? এটা undo করা যাবে না!')) {
-        remove(ref(db, 'messages'));
-        alert('✅ সব data delete হয়েছে!');
-      }
+db.ref('sos_alerts').on('value', snap => {
+  sosAlerts = [];
+  if (snap.exists()) {
+    snap.forEach(patientSnap => {
+      patientSnap.forEach(alertSnap => {
+        sosAlerts.push({ id: alertSnap.key, patientId: patientSnap.key, ...alertSnap.val() });
+      });
+    });
+  }
+  sosAlerts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  document.getElementById('sos-count-badge').textContent = sosAlerts.length;
+  document.getElementById('stat-sos').textContent = sosAlerts.length;
+  renderSOS();
+  renderRecentSOS();
+  if (sosAlerts.length > 0) addLog(`SOS alert from ${sosAlerts[0].patientName || 'patient'}`, 'warn');
+});
+
+// ════ STATS ════
+function updateStats() {
+  const total = allMessages.length;
+  const stressCount = allMessages.filter(m => m.emotion === 'STRESS').length;
+  const patients = new Set(allMessages.map(m => m.patientId)).size;
+
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-patients').textContent = patients;
+  document.getElementById('stat-stress').textContent = stressCount;
+  document.getElementById('msg-count-badge').textContent = total;
+  document.getElementById('msg-sub').textContent = `${total} messages from ${patients} patients`;
+  document.getElementById('h-storage').textContent = total;
+  document.getElementById('stress-pct-badge').textContent = total ? Math.round(stressCount/total*100)+'%' : '0%';
+
+  const barW = Math.min(100, total / 2);
+  document.getElementById('storage-bar').style.width = barW + '%';
+
+  // Emotion breakdown
+  const counts = { STRESS: 0, NEGATIVE: 0, POSITIVE: 0, NEUTRAL: 0 };
+  allMessages.forEach(m => { if (counts[m.emotion] !== undefined) counts[m.emotion]++; });
+  const colors = { STRESS:'#ef4444', NEGATIVE:'#f97316', POSITIVE:'#22c55e', NEUTRAL:'#6b7280' };
+  const icons = { STRESS:'🔴', NEGATIVE:'🟠', POSITIVE:'🟢', NEUTRAL:'⚪' };
+
+  document.getElementById('emo-breakdown').innerHTML = Object.entries(counts).map(([emo, cnt]) => {
+    const pct = total ? Math.round(cnt / total * 100) : 0;
+    return `<div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+        <span style="color:${colors[emo]}">${icons[emo]} ${emo}</span>
+        <span style="font-family:'DM Mono',monospace;color:var(--muted)">${cnt} &nbsp; ${pct}%</span>
+      </div>
+      <div style="height:6px;background:var(--border2);border-radius:3px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${colors[emo]};border-radius:3px;transition:width .5s"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ════ MESSAGES TABLE ════
+function filterMessages() {
+  const q = (document.getElementById('msg-search').value || '').toLowerCase();
+  const ef = document.getElementById('emo-filter').value;
+  filteredMessages = allMessages.filter(m => {
+    const matchQ = !q || (m.message||'').toLowerCase().includes(q) || (m.patientName||m.patientId||'').toLowerCase().includes(q);
+    const matchE = !ef || m.emotion === ef;
+    return matchQ && matchE;
+  });
+  currentPage = 1;
+  renderMessages();
+}
+
+function renderMessages() {
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const page = filteredMessages.slice(start, start + PAGE_SIZE);
+  const colors = { STRESS:'#ef4444',NEGATIVE:'#f97316',POSITIVE:'#22c55e',NEUTRAL:'#6b7280' };
+  const body = document.getElementById('msg-body');
+
+  if (page.length === 0) {
+    body.innerHTML = '<tr><td colspan="8" style="color:var(--muted);text-align:center;padding:30px">No messages found</td></tr>';
+    document.getElementById('pagination').innerHTML = '';
+    return;
+  }
+
+  body.innerHTML = page.map((m, i) => {
+    const emoL = (m.emotion||'neutral').toLowerCase();
+    const conf = m.confidence || 0;
+    const time = m.timestamp ? new Date(m.timestamp).toLocaleString('en-BD',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'}) : '—';
+    const idx = start + i + 1;
+    const checked = selectedRows.has(m.id) ? 'checked' : '';
+    return `<tr class="${selectedRows.has(m.id)?'selected':''}">
+      <td><input type="checkbox" class="checkbox" ${checked} onchange="toggleRow('${m.id}',this)"></td>
+      <td style="font-family:'DM Mono',monospace;color:var(--muted);font-size:10px">${idx}</td>
+      <td><div style="font-size:12px;font-weight:500">${m.patientName||m.patientId||'—'}</div></td>
+      <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(m.message||'')}</td>
+      <td><span class="emo-pill ${emoL}"><span class="emo-dot"></span>${m.emotion||'—'}</span></td>
+      <td><div class="conf-bar"><div class="conf-track"><div class="conf-fill" style="width:${conf}%;background:${colors[m.emotion]||'#6b7280'}"></div></div><span class="conf-pct">${conf}%</span></div></td>
+      <td style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;white-space:nowrap">${time}</td>
+      <td><div class="row-actions">
+        <button class="row-btn del" onclick="deleteMessage('${m.patientId}','${m.id}')">🗑</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+
+  renderPagination();
+}
+
+function renderPagination() {
+  const total = Math.ceil(filteredMessages.length / PAGE_SIZE);
+  const pag = document.getElementById('pagination');
+  if (total <= 1) { pag.innerHTML = ''; return; }
+  let html = `<span class="page-info">${filteredMessages.length} results</span>`;
+  html += `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+  for (let p = 1; p <= total; p++) {
+    if (p === 1 || p === total || Math.abs(p - currentPage) <= 1) {
+      html += `<button class="page-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`;
+    } else if (Math.abs(p - currentPage) === 2) {
+      html += `<span style="color:var(--muted)">…</span>`;
     }
-  </script>
+  }
+  html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===total?'disabled':''}>›</button>`;
+  pag.innerHTML = html;
+}
+
+function goPage(p) {
+  const total = Math.ceil(filteredMessages.length / PAGE_SIZE);
+  if (p < 1 || p > total) return;
+  currentPage = p;
+  renderMessages();
+}
+
+// ════ SOS ════
+function renderSOS() {
+  const body = document.getElementById('sos-body');
+  if (sosAlerts.length === 0) {
+    body.innerHTML = '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:30px">No SOS alerts 🎉</td></tr>';
+    return;
+  }
+  body.innerHTML = sosAlerts.map(a => {
+    const time = a.timestamp ? new Date(a.timestamp).toLocaleString('en-BD',{hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'}) : '—';
+    return `<tr>
+      <td><div style="font-size:12px;font-weight:500">${a.patientName||a.patientId||'—'}</div></td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px">${escHtml(a.triggerMessage||'Manual SOS')}</td>
+      <td><span style="font-size:10px;font-weight:600;color:var(--stress)">● ${a.priority||'HIGH'}</span></td>
+      <td><span class="emo-pill ${a.status==='READ'?'positive':'stress'}">${a.status||'UNREAD'}</span></td>
+      <td style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">${time}</td>
+      <td><div class="row-actions">
+        <button class="row-btn" onclick="markSOSRead('${a.patientId}','${a.id}')">✓ Read</button>
+        <button class="row-btn del" onclick="deleteSOSAlert('${a.patientId}','${a.id}')">🗑</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderRecentSOS() {
+  const recent = sosAlerts.slice(0, 5);
+  const body = document.getElementById('recent-sos-body');
+  if (recent.length === 0) {
+    body.innerHTML = '<tr><td colspan="4" style="color:var(--muted);text-align:center;padding:20px">No alerts yet 🎉</td></tr>';
+    return;
+  }
+  body.innerHTML = recent.map(a => {
+    const time = a.timestamp ? new Date(a.timestamp).toLocaleString('en-BD',{hour:'2-digit',minute:'2-digit'}) : '—';
+    return `<tr>
+      <td style="font-size:12px">${a.patientName||a.patientId||'—'}</td>
+      <td style="font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(a.triggerMessage||'Manual SOS')}</td>
+      <td style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">${time}</td>
+      <td><span class="emo-pill ${a.status==='READ'?'positive':'stress'}">${a.status||'UNREAD'}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ════ USERS ════
+const demoUsers = [
+  { name:'Akram Ahmad',    role:'patient', id:'P001', msgs:12, lastEmo:'STRESS',   avatar:'👤', color:'#3b82f6' },
+  { name:'Dr. Rahman',     role:'doctor',  id:'D001', msgs:0,  lastEmo:'—',        avatar:'👨‍⚕️',color:'#22c55e' },
+  { name:'Admin User',     role:'admin',   id:'A001', msgs:0,  lastEmo:'—',        avatar:'⚙️', color:'#eab308' },
+  { name:'Fatima Begum',   role:'patient', id:'P002', msgs:5,  lastEmo:'NEGATIVE', avatar:'👤', color:'#8b5cf6' },
+  { name:'Rahim Hossain',  role:'patient', id:'P003', msgs:8,  lastEmo:'POSITIVE', avatar:'👤', color:'#06b6d4' },
+  { name:'Dr. Nusrat',     role:'doctor',  id:'D002', msgs:0,  lastEmo:'—',        avatar:'👩‍⚕️',color:'#f59e0b' },
+];
+
+function renderUsers() {
+  const grid = document.getElementById('user-grid');
+  grid.innerHTML = demoUsers.map(u => `
+    <div class="user-card">
+      <div class="user-head">
+        <div class="user-avatar" style="background:${u.color}22;color:${u.color}">${u.avatar}</div>
+        <div>
+          <div class="user-name">${u.name}</div>
+          <div class="user-role"><span class="role-badge ${u.role}">${u.role.toUpperCase()}</span></div>
+        </div>
+      </div>
+      <div class="user-meta">
+        <div class="user-meta-row"><span>ID</span><span>${u.id}</span></div>
+        <div class="user-meta-row"><span>Messages</span><span>${u.msgs}</span></div>
+        <div class="user-meta-row"><span>Last Emotion</span><span>${u.lastEmo}</span></div>
+      </div>
+      <div class="user-actions">
+        <button class="usr-btn" onclick="showToast('Viewing ${u.name}','info')">View</button>
+        <button class="usr-btn" onclick="showToast('Editing ${u.name}','info')">Edit</button>
+        <button class="usr-btn danger" onclick="showToast('User ${u.name} disabled','error')">Disable</button>
+      </div>
+    </div>
+  `).join('');
+}
+renderUsers();
+
+function addDemoUser() { showToast('User registration form coming soon','info'); }
+
+// ════ LOGS ════
+function addLog(msg, level = 'info') {
+  const time = new Date().toLocaleTimeString('en-BD');
+  logs.unshift({ time, msg, level });
+  if (logs.length > 100) logs.pop();
+  document.getElementById('log-badge').textContent = logs.length;
+  const list = document.getElementById('log-list');
+  if (list) {
+    list.innerHTML = logs.slice(0, 50).map(l => `
+      <div class="log-item">
+        <span class="log-level ${l.level}">${l.level.toUpperCase()}</span>
+        <span class="log-time">${l.time}</span>
+        <span class="log-msg">${l.msg}</span>
+      </div>`).join('');
+  }
+}
+
+function clearLogs() { logs.length = 0; addLog('Logs cleared by admin','warn'); showToast('Logs cleared','info'); }
+
+// ════ ACTIONS ════
+function deleteMessage(patientId, msgId) {
+  db.ref(`messages/${patientId}/${msgId}`).remove()
+    .then(() => { showToast('Message deleted','success'); addLog(`Deleted message ${msgId}`,'warn'); })
+    .catch(() => showToast('Error deleting','error'));
+}
+
+function deleteSOSAlert(patientId, alertId) {
+  db.ref(`sos_alerts/${patientId}/${alertId}`).remove()
+    .then(() => showToast('Alert deleted','success'))
+    .catch(() => showToast('Error','error'));
+}
+
+function markSOSRead(patientId, alertId) {
+  db.ref(`sos_alerts/${patientId}/${alertId}`).update({ status: 'READ' })
+    .then(() => showToast('Marked as read','success'));
+}
+
+function clearSOSAlerts() {
+  openModal('Clear All SOS Alerts', 'All SOS alerts will be permanently deleted.', () => {
+    db.ref('sos_alerts').remove().then(() => { showToast('All SOS alerts cleared','success'); addLog('Admin cleared all SOS alerts','warn'); });
+  });
+}
+
+function showClearMessagesModal() {
+  openModal('⚠️ Clear All Messages', 'This will permanently delete ALL patient messages from the database. This cannot be undone!', () => {
+    db.ref('messages').remove().then(() => { showToast('All messages cleared','success'); addLog('Admin cleared all messages','error'); });
+  });
+}
+
+function showClearAllModal() {
+  openModal('🔥 Reset Entire Database', 'This will DELETE EVERYTHING — messages, SOS alerts, patient data. This CANNOT be undone!', () => {
+    Promise.all([
+      db.ref('messages').remove(),
+      db.ref('sos_alerts').remove(),
+      db.ref('patients').remove(),
+    ]).then(() => { showToast('Database reset complete','success'); addLog('ADMIN RESET ENTIRE DATABASE','error'); });
+  });
+}
+
+// ════ SELECTION ════
+function toggleRow(id, cb) {
+  cb.checked ? selectedRows.add(id) : selectedRows.delete(id);
+  updateSelToolbar();
+  const row = cb.closest('tr');
+  if (row) row.classList.toggle('selected', cb.checked);
+}
+
+function toggleSelectAll(cb) {
+  const page = filteredMessages.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE);
+  page.forEach(m => cb.checked ? selectedRows.add(m.id) : selectedRows.delete(m.id));
+  updateSelToolbar();
+  renderMessages();
+}
+
+function clearSelection() {
+  selectedRows.clear();
+  updateSelToolbar();
+  renderMessages();
+}
+
+function updateSelToolbar() {
+  const toolbar = document.getElementById('sel-toolbar');
+  document.getElementById('sel-count').textContent = selectedRows.size;
+  toolbar.classList.toggle('show', selectedRows.size > 0);
+}
+
+function deleteSelected() {
+  if (selectedRows.size === 0) return;
+  openModal(`Delete ${selectedRows.size} Messages`, `Are you sure you want to delete ${selectedRows.size} selected messages?`, () => {
+    const promises = [];
+    allMessages.filter(m => selectedRows.has(m.id)).forEach(m => {
+      promises.push(db.ref(`messages/${m.patientId}/${m.id}`).remove());
+    });
+    Promise.all(promises).then(() => {
+      showToast(`${selectedRows.size} messages deleted`, 'success');
+      selectedRows.clear();
+      updateSelToolbar();
+    });
+  });
+}
+
+// ════ EXPORT CSV ════
+function exportCSV(data) {
+  const rows = (data || filteredMessages);
+  if (rows.length === 0) { showToast('No data to export','error'); return; }
+  const headers = ['Patient ID','Patient Name','Message','Emotion','Confidence','Timestamp'];
+  const csv = [headers.join(','), ...rows.map(m => [
+    m.patientId, m.patientName||'', `"${(m.message||'').replace(/"/g,'""')}"`,
+    m.emotion, m.confidence||0, m.timestamp ? new Date(m.timestamp).toLocaleString() : ''
+  ].join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `emocare-messages-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+  showToast(`Exported ${rows.length} rows`, 'success');
+  addLog(`CSV exported (${rows.length} rows)`, 'success');
+}
+
+function exportAllCSV() { exportCSV(allMessages); }
+
+// ════ UI HELPERS ════
+function switchTab(name, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('show'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('show');
+  if (el) el.classList.add('active');
+}
+
+let modalAction = null;
+function openModal(title, body, fn) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').textContent = body;
+  modalAction = fn;
+  document.getElementById('confirm-modal').classList.add('show');
+}
+function closeModal() { document.getElementById('confirm-modal').classList.remove('show'); modalAction = null; }
+document.getElementById('modal-ok').onclick = () => { if (modalAction) modalAction(); closeModal(); };
+
+let toastTimer;
+function showToast(msg, type = 'info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function toggleSetting(el) {
+  const on = el.style.background !== 'var(--muted)' && el.style.background !== 'rgb(90, 100, 120)';
+  el.style.background = on ? 'var(--muted)' : 'var(--positive)';
+  const knob = el.querySelector('div');
+  knob.style.right = on ? 'auto' : '3px';
+  knob.style.left = on ? '3px' : 'auto';
+}
+
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
 </body>
 </html>

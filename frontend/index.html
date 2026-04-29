@@ -3,159 +3,264 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>EmoCare - Emotion-Aware Telemedicine</title>
+  <title>EmoCare - Telemedicine</title>
+  <link rel="stylesheet" href="css/style.css">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-    body { background: #F0F4FF; min-height: 100vh; }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes heartbeat {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+    @keyframes pulse-ring {
+      0% { box-shadow: 0 0 0 0 rgba(30,136,229,0.4); }
+      70% { box-shadow: 0 0 0 15px rgba(30,136,229,0); }
+      100% { box-shadow: 0 0 0 0 rgba(30,136,229,0); }
+    }
+    @keyframes particle {
+      0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+      10% { opacity: 0.6; }
+      90% { opacity: 0.6; }
+      100% { transform: translateY(-100px) rotate(720deg); opacity: 0; }
+    }
 
-    .navbar { background: white; padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.08); position: sticky; top: 0; z-index: 100; }
-    .nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-    .nav-icon { background: #1E88E5; color: white; width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-    .nav-title { font-size: 20px; font-weight: 700; color: #1E88E5; }
-    .nav-menu { display: flex; gap: 8px; }
-    .nav-menu a { color: #555; text-decoration: none; font-size: 13px; padding: 7px 14px; border-radius: 20px; transition: all 0.2s; }
-    .nav-menu a:hover, .nav-menu a.active { background: #E3F2FD; color: #1E88E5; font-weight: 600; }
+    body {
+      background: var(--bg-main);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
 
-    .hero { max-width: 1100px; margin: 50px auto; padding: 0 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 50px; align-items: center; }
-    .hero-left h1 { font-size: 38px; font-weight: 800; color: #1a1a2e; line-height: 1.25; margin-bottom: 15px; }
-    .hero-left h1 span { color: #1E88E5; }
-    .hero-left > p { color: #666; font-size: 15px; line-height: 1.7; margin-bottom: 30px; }
+    .particles {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
 
-    .features { display: flex; flex-direction: column; gap: 14px; }
-    .feature { display: flex; align-items: flex-start; gap: 14px; background: white; padding: 15px; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-    .f-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
-    .f-icon.blue { background: #E3F2FD; }
-    .f-icon.green { background: #E8F5E9; }
-    .f-icon.purple { background: #F3E5F5; }
-    .f-text h4 { font-size: 14px; font-weight: 600; color: #1a1a2e; margin-bottom: 3px; }
-    .f-text p { font-size: 12px; color: #888; }
+    .particle {
+      position: absolute;
+      bottom: -20px;
+      width: 8px; height: 8px;
+      background: rgba(30,136,229,0.3);
+      border-radius: 50%;
+      animation: particle linear infinite;
+    }
 
-    .login-card { background: white; border-radius: 24px; padding: 40px; box-shadow: 0 20px 60px rgba(30,136,229,0.12); }
-    .login-card h2 { font-size: 26px; font-weight: 700; color: #1a1a2e; margin-bottom: 5px; }
-    .login-card .sub { color: #888; font-size: 14px; margin-bottom: 25px; }
+    .login-container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
 
-    .role-tabs { display: grid; grid-template-columns: 1fr 1fr 1fr; background: #F5F7FA; border-radius: 12px; padding: 4px; margin-bottom: 25px; gap: 4px; }
-    .role-tab { padding: 10px 5px; text-align: center; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 500; color: #888; border: none; background: transparent; transition: all 0.2s; }
-    .role-tab.active { background: white; color: #1E88E5; box-shadow: 0 2px 8px rgba(0,0,0,0.1); font-weight: 600; }
+    .login-card {
+      background: var(--bg-card);
+      border-radius: 24px;
+      padding: 50px 40px;
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow);
+      animation: fadeInUp 0.8s ease forwards;
+      backdrop-filter: blur(10px);
+    }
 
-    .input-group { margin-bottom: 18px; }
-    .input-group label { display: block; font-size: 13px; font-weight: 500; color: #444; margin-bottom: 7px; }
-    .input-group input { width: 100%; padding: 12px 16px; border: 1.5px solid #E8ECF0; border-radius: 12px; font-size: 14px; outline: none; transition: border 0.2s; background: #FAFAFA; }
-    .input-group input:focus { border-color: #1E88E5; background: white; }
+    .logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
 
-    .forgot { text-align: right; margin-bottom: 20px; }
-    .forgot a { color: #1E88E5; font-size: 13px; text-decoration: none; }
+    .logo-icon {
+      background: #1E88E5;
+      color: white;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      animation: heartbeat 1.5s ease-in-out infinite, pulse-ring 2s ease-in-out infinite;
+    }
 
-    .signin-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #1E88E5, #1565C0); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(30,136,229,0.3); }
-    .signin-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(30,136,229,0.4); }
+    .logo h1 {
+      color: #1E88E5;
+      font-size: 32px;
+      font-weight: 700;
+    }
 
-    .signup-text { text-align: center; margin-top: 18px; font-size: 13px; color: #888; }
-    .signup-text a { color: #1E88E5; font-weight: 600; text-decoration: none; }
+    .tagline {
+      color: var(--text-secondary);
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
 
-    .stats-bar { background: white; padding: 30px 40px; display: flex; justify-content: center; gap: 70px; margin-top: 30px; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
-    .stat-item { text-align: center; }
-    .stat-num { font-size: 30px; font-weight: 800; color: #1E88E5; }
-    .stat-label { font-size: 12px; color: #888; margin-top: 4px; }
+    .emoji-row {
+      font-size: 22px;
+      margin-bottom: 30px;
+      animation: float 3s ease-in-out infinite;
+      letter-spacing: 8px;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .btn-patient {
+      background: linear-gradient(135deg, #1E88E5, #1565C0);
+      color: white;
+      border: none;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-patient::before {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 100%; height: 100%;
+      background: rgba(255,255,255,0.2);
+      transform: skewX(-20deg);
+      transition: left 0.5s;
+    }
+
+    .btn-patient:hover::before { left: 100%; }
+    .btn-patient:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(30,136,229,0.4); }
+
+    .btn-doctor {
+      background: var(--bg-card);
+      color: #1E88E5;
+      border: 2px solid #1E88E5;
+      padding: 15px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-doctor:hover {
+      background: #E3F2FD;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(30,136,229,0.2);
+    }
+
+    .version-tag {
+      margin-top: 20px;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .theme-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid #1E88E5;
+      background: var(--bg-card);
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+      transition: all 0.3s ease;
+    }
+    .theme-btn:hover { transform: scale(1.1) rotate(20deg); }
   </style>
 </head>
 <body>
 
-  <nav class="navbar">
-    <a href="index.html" class="nav-brand">
-      <div class="nav-icon">💙</div>
-      <span class="nav-title">EmoCare</span>
-    </a>
-    <div class="nav-menu">
-      <a href="index.html" class="active">🏠 Home</a>
-      <a href="patient-chat.html">💬 Patient</a>
-      <a href="doctor-dashboard.html">🩺 Doctor</a>
-      <a href="admin.html">⚙️ Admin</a>
-      <a href="analytics.html">📊 Analytics</a>
+<div class="particles" id="particles"></div>
+
+<button class="theme-btn" id="themeToggle" onclick="toggleTheme()">☀️</button>
+
+<div class="login-container">
+  <div class="login-card">
+    <div class="logo">
+      <div class="logo-icon">+</div>
+      <h1>EmoCare</h1>
     </div>
-  </nav>
-
-  <div class="hero">
-    <div class="hero-left">
-      <h1>Emotion-Aware<br><span>Telemedicine</span><br>System</h1>
-      <p>AI-powered sentiment analysis to understand patient emotions and provide better healthcare support in Bangladesh 🇧🇩</p>
-      <div class="features">
-        <div class="feature">
-          <div class="f-icon blue">⚡</div>
-          <div class="f-text">
-            <h4>Real-time Emotion Detection</h4>
-            <p>AI analyzes patient messages to detect stress, anxiety, and emotional states instantly</p>
-          </div>
-        </div>
-        <div class="feature">
-          <div class="f-icon green">🩺</div>
-          <div class="f-text">
-            <h4>Smart Doctor Dashboard</h4>
-            <p>Priority alerts for high-risk patients with comprehensive real-time analytics</p>
-          </div>
-        </div>
-        <div class="feature">
-          <div class="f-icon purple">🔒</div>
-          <div class="f-text">
-            <h4>Secure & Compliant</h4>
-            <p>Firebase-powered platform with encrypted patient data and secure access</p>
-          </div>
-        </div>
-      </div>
+    <p class="tagline">Emotion-Aware Telemedicine System</p>
+    <div class="emoji-row">😊 😢 😰 😐</div>
+    <div class="btn-group">
+      <button class="btn-patient" onclick="goTo('patient-chat.html')">
+        🧑‍⚕️ Login as Patient
+      </button>
+      <button class="btn-doctor" onclick="goTo('doctor-dashboard.html')">
+        👨‍⚕️ Login as Doctor
+      </button>
     </div>
-
-    <div class="login-card">
-      <h2>Welcome Back</h2>
-      <p class="sub">Sign in to your EmoCare account</p>
-
-      <div class="role-tabs">
-        <button class="role-tab active" onclick="selectRole('patient', this)">👤 Patient</button>
-        <button class="role-tab" onclick="selectRole('doctor', this)">🩺 Doctor</button>
-        <button class="role-tab" onclick="selectRole('admin', this)">⚙️ Admin</button>
-      </div>
-
-      <div class="input-group">
-        <label>Email</label>
-        <input type="email" id="emailInput" placeholder="name@example.com"
-               autocomplete="off" />
-      </div>
-
-      <div class="input-group">
-        <label>Password</label>
-        <input type="password" id="passInput" placeholder="••••••••"
-               autocomplete="new-password" />
-      </div>
-
-      <div class="forgot"><a href="#">Forgot password?</a></div>
-
-      <button class="signin-btn" onclick="handleLogin()">Sign In →</button>
-
-      <p class="signup-text">Don't have an account? <a href="#">Sign up</a></p>
-    </div>
+    <p class="version-tag">v2.0 — AI Powered | Firebase Connected</p>
   </div>
+</div>
 
-  <div class="stats-bar">
-    <div class="stat-item"><div class="stat-num">500+</div><div class="stat-label">Patients Served</div></div>
-    <div class="stat-item"><div class="stat-num">95%</div><div class="stat-label">Accuracy Rate</div></div>
-    <div class="stat-item"><div class="stat-num">24/7</div><div class="stat-label">AI Support</div></div>
-    <div class="stat-item"><div class="stat-num">&lt;2s</div><div class="stat-label">Response Time</div></div>
-  </div>
+<script>
+function goTo(page) {
+  document.querySelector('.login-card').style.animation = 'fadeOut 0.4s ease forwards';
+  setTimeout(() => window.location.href = page, 350);
+}
 
-  <script>
-    let currentRole = 'patient';
-    function selectRole(role, el) {
-      currentRole = role;
-      document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
-      el.classList.add('active');
-    }
-    function handleLogin() {
-      const email = document.getElementById('emailInput').value;
-      const pass = document.getElementById('passInput').value;
-      if (!email || !pass) { alert('Email এবং Password দিন!'); return; }
-      if (currentRole === 'patient') window.location.href = 'patient-chat.html';
-      else if (currentRole === 'doctor') window.location.href = 'doctor-dashboard.html';
-      else window.location.href = 'admin.html';
-    }
-    document.addEventListener('keypress', e => { if (e.key === 'Enter') handleLogin(); });
-  </script>
+function toggleTheme() {
+  const html = document.documentElement;
+  const btn = document.getElementById('themeToggle');
+  if (html.getAttribute('data-theme') === 'dark') {
+    html.removeAttribute('data-theme');
+    btn.textContent = '☀️';
+    localStorage.setItem('theme', 'light');
+  } else {
+    html.setAttribute('data-theme', 'dark');
+    btn.textContent = '🌙';
+    localStorage.setItem('theme', 'dark');
+  }
+}
+
+const saved = localStorage.getItem('theme');
+if (saved === 'dark') {
+  document.documentElement.setAttribute('data-theme', 'dark');
+  document.getElementById('themeToggle').textContent = '🌙';
+}
+
+const particles = document.getElementById('particles');
+for (let i = 0; i < 15; i++) {
+  const p = document.createElement('div');
+  p.className = 'particle';
+  p.style.left = Math.random() * 100 + 'vw';
+  p.style.width = p.style.height = (Math.random() * 8 + 4) + 'px';
+  p.style.animationDuration = (Math.random() * 10 + 8) + 's';
+  p.style.animationDelay = (Math.random() * 8) + 's';
+  p.style.opacity = Math.random() * 0.5 + 0.2;
+  particles.appendChild(p);
+}
+</script>
 </body>
 </html>

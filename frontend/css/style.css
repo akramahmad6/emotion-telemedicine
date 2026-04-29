@@ -21,7 +21,10 @@ body {
 }
 
 .login-card {
-  background: white;
+  background: var(--bg-card);
+  color: var(--color-text-primary);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow); white
   border-radius: 20px;
   padding: 50px 40px;
   width: 100%;
@@ -57,9 +60,7 @@ body {
 }
 
 .tagline {
-  color: #888;
-  font-size: 14px;
-  margin-bottom: 40px;
+  color: var(--text-secondary);
 }
 
 .btn-group {
@@ -446,4 +447,101 @@ body {
   cursor: pointer;
   font-size: 13px;
   margin-top: 10px;
+}
+:root {
+  --bg-main: #E3F2FD;
+  --bg-card: #ffffff;
+  --bg-chat: #F5F9FF;
+  --text-primary: #333333;
+  --text-secondary: #888888;
+  --border-color: #BBDEFB;
+  --header-bg: #1E88E5;
+  --bubble-user: #1E88E5;
+  --bubble-bot: #ffffff;
+  --input-bg: #ffffff;
+  --shadow: 0 4px 20px rgba(30,136,229,0.15);
+  --transition: all 0.3s ease;
+}
+
+[data-theme="dark"] {
+  --bg-main: #0a0f1e;
+  --bg-card: #1a2035;
+  --bg-chat: #111827;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --border-color: #2d3748;
+  --header-bg: #1565C0;
+  --bubble-user: #1565C0;
+  --bubble-bot: #1e293b;
+  --input-bg: #1e293b;
+  --shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+body {
+  background: var(--bg-main);
+}
+@media (max-width: 768px) {
+  .login-card {
+    padding: 35px 25px;
+    margin: 10px;
+    border-radius: 20px;
+  }
+
+  .logo h1 { font-size: 26px; }
+
+  .chat-wrapper {
+    height: 100vh;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  .chat-header {
+    padding: 12px 15px;
+  }
+
+  .chat-input-area {
+    padding: 10px;
+  }
+
+  .chat-input-area input {
+    font-size: 16px;
+  }
+
+  .dashboard-wrapper {
+    padding: 0 10px;
+  }
+
+  .dash-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stat-num { font-size: 22px; }
+
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .btn-patient, .btn-doctor {
+    padding: 14px;
+    font-size: 15px;
+  }
+
+  .bubble {
+    max-width: 85%;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .dash-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .stat-num { font-size: 20px; }
+  .stat-label { font-size: 11px; }
 }
